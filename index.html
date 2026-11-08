@@ -1,0 +1,933 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#EEF0EC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141A17" media="(prefers-color-scheme: dark)">
+<title>Selah Journal</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{
+  --bg:#EEF0EC; --surface:#F8F9F6; --ink:#23302A; --muted:#5E6B63; --line:#D3DAD2;
+  --accent:#3F5F80; --gold:#A8842F; --on-gold:#1E1A0E; --danger:#9B3B2F;
+  --serif:'Newsreader', Georgia, 'Times New Roman', serif;
+  --sans:'Figtree', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141A17; --surface:#1C2420; --ink:#E4E9E3; --muted:#9AA79F; --line:#2E3A34;
+    --accent:#93B3D3; --gold:#D4B05C; --on-gold:#1E1A0E; --danger:#E3907F; color-scheme:dark;
+  }
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;-webkit-tap-highlight-color:transparent}
+#app{max-width:680px;margin:0 auto;padding:0 20px 120px}
+[hidden]{display:none !important}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+label{display:block;font-weight:500;margin:16px 0 0}
+label > input,label > select,label > textarea{margin-top:6px;font-weight:400}
+label.row{display:flex;gap:10px;align-items:center;font-weight:400}
+label.row input{width:auto}
+
+.btn{border:1px solid transparent;border-radius:999px;padding:11px 20px;font-weight:600;background:none}
+.btn.primary{background:var(--ink);color:var(--bg)}
+.btn.ghost{border-color:var(--line);background:var(--surface)}
+.btn.small{padding:7px 14px;font-size:15px}
+.btn.link{padding:8px 0;font-weight:500;text-decoration:underline;text-underline-offset:3px}
+.btn.danger{color:var(--danger)}
+.btn.wide{width:100%}
+.btn:disabled{opacity:.55;cursor:default}
+.icon-btn{border:none;background:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}
+.icon-btn svg{width:22px;height:22px}
+
+.wordmark{font-family:var(--serif);font-style:italic;font-weight:400;font-size:56px;line-height:1;margin:0;letter-spacing:-.01em}
+.wordmark.small{font-size:30px}
+.msg{color:var(--danger);min-height:1.5em;margin:12px 0 0}
+.hint{color:var(--muted);font-size:14px;margin:6px 0 0}
+
+/* Setup */
+.setup{padding-top:12vh}
+.setup .lede{font-family:var(--serif);font-size:21px;color:var(--muted);margin:12px 0 32px;max-width:28em}
+.setup h2{font-family:var(--serif);font-weight:500;font-size:26px;margin:0 0 8px}
+.setup-step .btn{margin-top:24px}
+
+/* PIN */
+.pin{min-height:90vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.pin-title{margin:28px 0 18px;font-size:18px}
+.dots{display:flex;gap:18px}
+.dots span{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);transition:background .12s}
+.dots span.on{background:var(--ink)}
+.dots.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.keypad{display:grid;grid-template-columns:repeat(3,76px);gap:14px 26px;margin-top:20px}
+.keypad button{width:76px;height:76px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:28px;font-family:var(--serif)}
+.keypad button:active{background:var(--line)}
+.keypad .blank{visibility:hidden}
+.keypad .back{border:none;background:none;font-family:var(--sans);font-size:15px;color:var(--muted)}
+
+/* Top bar */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.top-actions{display:flex;align-items:center;gap:4px}
+.topbar-title{font-size:18px;font-weight:600;margin:0}
+.topbar input[type=date]{width:auto;flex:1;max-width:220px;text-align:center;border:none;background:none;font-weight:500}
+
+/* The prompt: the one place the design speaks up */
+.prompt{padding:18px 0 30px;border-bottom:1px solid var(--line)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin:0 -20px 18px;padding-inline:20px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-size:14px;color:var(--muted)}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.prompt-text{font-family:var(--serif);font-size:clamp(26px,6.4vw,34px);line-height:1.22;font-weight:400;margin:0;letter-spacing:-.005em;font-variation-settings:"opsz" 60;text-wrap:pretty}
+.prompt-text.quiet{color:var(--muted);font-size:24px}
+.nudges{list-style:none;padding:0;margin:16px 0 0;color:var(--muted);font-family:var(--serif);font-size:18px;line-height:1.5}
+.nudges li{margin:4px 0}
+.verse{margin:22px 0 0;padding:2px 0 2px 16px;border-left:3px solid var(--gold)}
+.verse p{margin:0;font-family:var(--serif);font-style:italic;font-size:18px;line-height:1.55}
+.verse cite{display:block;margin-top:6px;font-style:normal;font-size:14px}
+.verse a{color:var(--accent)}
+.prompt-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+
+/* Timeline */
+.list-head{display:flex;align-items:center;gap:12px;margin:26px 0 4px}
+.list-head h2{font-size:18px;margin:0;flex:none}
+.list-head input{padding:8px 12px}
+.month{font-family:var(--serif);font-weight:500;font-size:20px;margin:28px 0 6px}
+.entries{list-style:none;margin:0;padding:0}
+.entry-row{display:flex;align-items:flex-start;gap:16px;width:100%;text-align:left;background:none;border:none;border-top:1px solid var(--line);padding:14px 0}
+.day{flex:none;width:44px;display:flex;flex-direction:column;align-items:center}
+.dnum{font-family:var(--serif);font-size:30px;line-height:1}
+.dname{font-size:13px;color:var(--muted)}
+.ebody{flex:1;min-width:0}
+.excerpt{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-family:var(--serif);font-size:17px;line-height:1.45}
+.meta{display:block;font-size:13px;color:var(--muted);margin-top:4px}
+.thumb{flex:none;width:58px;height:58px;object-fit:cover;border-radius:8px;background:var(--line)}
+img:not([src]){visibility:hidden}
+.empty{color:var(--muted);font-family:var(--serif);font-size:19px;margin:24px 0}
+.bottom-bar{position:fixed;left:0;right:0;bottom:0;padding:12px 20px calc(14px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--bg) 35%)}
+.bottom-bar .btn{display:block;max-width:640px;margin:0 auto;padding:15px}
+
+/* Editor */
+#editor-prompt{margin:4px 0 18px}
+#editor-prompt .prompt-text{font-size:22px}
+#editor-prompt .verse p{font-size:16px}
+#entry-text{display:block;border:none;background:none;padding:0;min-height:40vh;resize:none;font-family:var(--serif);font-size:20px;line-height:1.65;border-radius:0}
+#entry-text:focus{outline:none}
+.photo-strip{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
+.ph{position:relative;margin:0;width:96px;height:96px}
+.ph img{width:100%;height:100%;object-fit:cover;border-radius:10px;background:var(--line)}
+.ph-remove{position:absolute;top:-8px;right:-8px;width:28px;height:28px;border-radius:50%;border:none;background:var(--ink);color:var(--bg);font-size:18px;line-height:1}
+.reflection{margin:22px 0;padding:16px 18px;background:var(--surface);border-radius:14px}
+.reflection h3{font-size:14px;font-weight:600;color:var(--muted);margin:0 0 8px}
+.reflection p{font-family:var(--serif);font-size:17px;line-height:1.6;margin:0 0 10px}
+.tools{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:center;gap:36px;padding:12px 20px calc(14px + env(safe-area-inset-bottom,0px));background:var(--bg);border-top:1px solid var(--line)}
+.tool{border:none;background:none;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:13px;color:var(--muted);min-width:60px}
+.tool svg{width:24px;height:24px}
+.mic{width:68px;height:68px;border-radius:50%;border:none;background:var(--gold);color:var(--on-gold);display:grid;place-items:center}
+.mic svg{width:30px;height:30px}
+.mic[aria-pressed=true]{animation:breathe 1.6s ease-in-out infinite}
+@keyframes breathe{50%{box-shadow:0 0 0 12px color-mix(in srgb,var(--gold) 25%,transparent)}}
+@media (prefers-reduced-motion:reduce){.mic[aria-pressed=true]{animation:none;outline:4px solid var(--gold);outline-offset:4px}.dots.shake{animation:none}}
+
+/* Settings */
+.settings section{padding:8px 0 24px;border-bottom:1px solid var(--line)}
+.settings h2{font-family:var(--serif);font-weight:500;font-size:22px;margin:16px 0 0}
+.settings .btn{margin-top:14px;margin-right:8px}
+
+/* Dialog, viewer, toast */
+dialog{border:none;border-radius:16px;background:var(--surface);color:var(--ink);padding:22px;max-width:min(420px,90vw)}
+dialog::backdrop{background:rgb(0 0 0 / .45)}
+dialog h2{margin:0 0 8px;font-size:19px}
+dialog p{margin:0;color:var(--muted)}
+.dlg-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+#viewer{position:fixed;inset:0;z-index:30;background:rgb(0 0 0 / .92);display:grid;place-items:center;padding:20px}
+#viewer img{max-width:100%;max-height:100%;border-radius:6px}
+#toast{position:fixed;left:50%;bottom:calc(100px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:15px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center;z-index:40}
+#toast.show{opacity:1}
+.loading{min-height:80vh;display:grid;place-items:center}
+</style>
+</head>
+<body>
+<main id="app">
+
+<section id="screen-loading" class="screen loading"><p class="wordmark">Selah</p></section>
+
+<section id="screen-setup" class="screen" hidden>
+  <div class="setup">
+    <h1 class="wordmark">Selah</h1>
+    <p class="lede">A private journal for ordinary days, and for noticing God in them.</p>
+
+    <div id="setup-welcome" class="setup-step">
+      <p>Entries are encrypted on this device before they’re saved to a folder in your Google Drive. Only this app, with your passphrase, can read them. Google can’t.</p>
+      <button id="btn-connect" class="btn primary">Connect Google Drive</button>
+    </div>
+
+    <div id="setup-checking" class="setup-step" hidden><p>Looking for your journal in Google Drive…</p></div>
+
+    <form id="setup-new" class="setup-step" hidden>
+      <h2>Create your passphrase</h2>
+      <p>You’ll use this to open your journal on a new phone or on a computer. Use at least 12 characters; a short sentence works well. Write it down and keep it somewhere safe: if it’s lost, no one can recover your entries.</p>
+      <label>Passphrase<input type="password" id="pass-new" autocomplete="new-password" required></label>
+      <label>Type it again<input type="password" id="pass-new2" autocomplete="new-password" required></label>
+      <button class="btn primary" type="submit">Create journal</button>
+    </form>
+
+    <form id="setup-existing" class="setup-step" hidden>
+      <h2>Welcome back</h2>
+      <p>Your journal is in Google Drive. Enter your passphrase to open it on this device.</p>
+      <label>Passphrase<input type="password" id="pass-existing" autocomplete="current-password" required></label>
+      <button class="btn primary" type="submit">Open journal</button>
+    </form>
+
+    <p id="setup-msg" class="msg" role="alert"></p>
+  </div>
+</section>
+
+<section id="screen-pin" class="screen" hidden>
+  <div class="pin">
+    <p class="wordmark small">Selah</p>
+    <p id="pin-title" class="pin-title">Enter your PIN</p>
+    <div class="dots" id="pin-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+    <p id="pin-msg" class="msg" role="alert"></p>
+    <div class="keypad" id="keypad">
+      <button data-d="1">1</button><button data-d="2">2</button><button data-d="3">3</button>
+      <button data-d="4">4</button><button data-d="5">5</button><button data-d="6">6</button>
+      <button data-d="7">7</button><button data-d="8">8</button><button data-d="9">9</button>
+      <span class="blank"></span><button data-d="0">0</button><button class="back" data-d="back" aria-label="Delete digit">Delete</button>
+    </div>
+    <button id="pin-cancel" class="btn link" hidden>Cancel</button>
+  </div>
+</section>
+
+<section id="screen-home" class="screen" hidden>
+  <header class="topbar">
+    <h1 class="wordmark small">Selah</h1>
+    <div class="top-actions">
+      <button id="btn-sync" class="btn ghost small">Sync</button>
+      <button id="btn-lock" class="icon-btn" aria-label="Lock journal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button>
+      <button id="btn-settings" class="icon-btn" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
+    </div>
+  </header>
+
+  <section class="prompt" aria-label="Writing prompt">
+    <div class="chips" id="topic-chips" role="group" aria-label="What should the prompt be about?"></div>
+    <div id="prompt-body"></div>
+    <div class="prompt-actions">
+      <button id="btn-write-prompt" class="btn primary">Write about this</button>
+      <button id="btn-new-prompt" class="btn ghost">Give me a prompt</button>
+    </div>
+  </section>
+
+  <div class="list-head">
+    <h2>Entries</h2>
+    <input type="search" id="search" placeholder="Search" aria-label="Search entries">
+  </div>
+  <div id="timeline"></div>
+
+  <div class="bottom-bar"><button id="btn-new" class="btn primary wide">New entry</button></div>
+</section>
+
+<section id="screen-editor" class="screen" hidden>
+  <header class="topbar">
+    <button id="btn-cancel" class="btn ghost small">Cancel</button>
+    <input type="date" id="entry-date" aria-label="Entry date">
+    <button id="btn-save" class="btn primary small">Save</button>
+  </header>
+  <div id="editor-prompt"></div>
+  <textarea id="entry-text" placeholder="Start writing, or tap the mic and talk."></textarea>
+  <div id="photo-strip" class="photo-strip"></div>
+  <div id="reflections"></div>
+  <button id="btn-delete" class="btn link danger" hidden>Delete this entry</button>
+  <div class="tools">
+    <button id="btn-photo" class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Photo</span></button>
+    <button id="btn-mic" class="mic" aria-pressed="false" aria-label="Dictate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+    <button id="btn-reflect" class="tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/></svg><span>Reflect</span></button>
+  </div>
+  <input type="file" id="photo-input" accept="image/*" multiple hidden>
+</section>
+
+<section id="screen-settings" class="screen" hidden>
+  <header class="topbar">
+    <button id="btn-settings-back" class="btn ghost small">Done</button>
+    <h1 class="topbar-title">Settings</h1>
+    <span style="width:60px"></span>
+  </header>
+  <div class="settings">
+    <section>
+      <h2>Prompts and reflections</h2>
+      <label>Claude API key<input type="password" id="set-apikey" autocomplete="off" placeholder="sk-ant-…"></label>
+      <p class="hint">Saved encrypted on this device only. A prompt request sends your chosen focus and the note below. A reflection sends only the entry you ask about. Photos and other entries never leave the app.</p>
+      <label>About me<textarea id="set-about" rows="3"></textarea></label>
+      <p class="hint">Helps the prompts fit your life. Keep it general.</p>
+      <label>Bible translation
+        <select id="set-translation">
+          <option>ESV</option><option>NIV</option><option>NKJV</option><option>KJV</option><option>NLT</option><option>CSB</option><option>NASB</option>
+        </select>
+      </label>
+      <label>Claude model<input id="set-model" autocomplete="off"></label>
+    </section>
+    <section>
+      <h2>Voice</h2>
+      <label class="row"><input type="checkbox" id="set-mic"> Show the mic button while writing</label>
+      <p class="hint">The mic button uses Google’s speech service in Chrome. For dictation that stays on your phone, turn on offline voice typing in Gboard and use the mic on your keyboard instead.</p>
+    </section>
+    <section>
+      <h2>Security</h2>
+      <label>Lock when I leave the app
+        <select id="set-lock"><option value="0">Right away</option><option value="60000">After 1 minute</option><option value="300000">After 5 minutes</option></select>
+      </label>
+      <button id="btn-change-pin" class="btn ghost">Change PIN</button>
+    </section>
+    <section>
+      <h2>Google Drive</h2>
+      <p class="hint" id="sync-info"></p>
+      <button id="btn-sync-now" class="btn ghost">Sync now</button>
+      <button id="btn-wipe" class="btn ghost danger">Remove journal from this device</button>
+      <p class="hint">Removing deletes the copy on this device only. Your encrypted entries stay in Google Drive, and your passphrase brings them back.</p>
+    </section>
+  </div>
+</section>
+
+</main>
+
+<dialog id="dlg"><form method="dialog">
+  <h2 id="dlg-title"></h2><p id="dlg-body"></p>
+  <div class="dlg-actions"><button value="cancel" class="btn ghost">Cancel</button><button value="ok" id="dlg-ok" class="btn primary">OK</button></div>
+</form></dialog>
+<div id="viewer" hidden><img alt="Photo"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+
+/* ===== Settings you fill in once ===== */
+const CONFIG = {
+  GOOGLE_CLIENT_ID: '64363793521-q8kkh1jfntenbe87fckglp9vkntguds6.apps.googleusercontent.com',
+  DRIVE_FOLDER_NAME: 'Selah Journal (encrypted)',
+  DEFAULT_MODEL: 'claude-sonnet-5-5',
+  PASS_ITERATIONS: 600000,
+  PIN_ITERATIONS: 200000,
+  MAX_PIN_ATTEMPTS: 5,
+};
+
+/* ===== Small helpers ===== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const enc = new TextEncoder(), dec = new TextDecoder();
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + '-' + Array.from(crypto.getRandomValues(new Uint8Array(5)), b => b.toString(16).padStart(2, '0')).join('');
+const b64 = {
+  from(buf) { const a = new Uint8Array(buf); let s = ''; for (let i = 0; i < a.length; i += 0x8000) s += String.fromCharCode.apply(null, a.subarray(i, i + 0x8000)); return btoa(s); },
+  to(str) { return Uint8Array.from(atob(str), c => c.charCodeAt(0)); }
+};
+const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+const parseDate = iso => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d); };
+
+let toastTimer;
+function toast(msg, ms = 2600) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), ms); }
+function show(id) { $$('.screen').forEach(s => s.hidden = s.id !== id); window.scrollTo(0, 0); }
+function confirmDialog(title, body, okText = 'OK') {
+  return new Promise(res => {
+    const d = $('#dlg'); $('#dlg-title').textContent = title; $('#dlg-body').textContent = body; $('#dlg-ok').textContent = okText;
+    d.returnValue = ''; d.onclose = () => res(d.returnValue === 'ok'); d.showModal();
+  });
+}
+async function busy(btn, label, fn) { const old = btn.textContent; btn.disabled = true; btn.textContent = label; try { return await fn(); } finally { btn.disabled = false; btn.textContent = old; } }
+
+/* ===== Local storage (IndexedDB) ===== */
+const idb = (() => {
+  let dbp;
+  const open = () => dbp ||= new Promise((res, rej) => { const r = indexedDB.open('selah', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  async function tx(mode, fn) {
+    const db = await open();
+    return new Promise((res, rej) => { const t = db.transaction('kv', mode); let out; const r = fn(t.objectStore('kv')); r.onsuccess = () => out = r.result; t.oncomplete = () => res(out); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error); });
+  }
+  return { get: k => tx('readonly', s => s.get(k)), set: (k, v) => tx('readwrite', s => s.put(v, k)), del: k => tx('readwrite', s => s.delete(k)), keys: () => tx('readonly', s => s.getAllKeys()), clear: () => tx('readwrite', s => s.clear()) };
+})();
+
+/* ===== Encryption ===== */
+async function deriveWrappingKey(passphrase, salt, iterations) {
+  const base = await crypto.subtle.importKey('raw', enc.encode(passphrase.normalize('NFC')), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['wrapKey', 'unwrapKey']);
+}
+function unwrapMaster(kf, kek, extractable) {
+  return crypto.subtle.unwrapKey('raw', b64.to(kf.wrapped), kek, { name: 'AES-GCM', iv: b64.to(kf.iv) }, { name: 'AES-GCM', length: 256 }, extractable, ['encrypt', 'decrypt']);
+}
+async function encryptBytes(bytes, key = state.masterKey) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, bytes));
+  const out = new Uint8Array(13 + ct.length); out[0] = 1; out.set(iv, 1); out.set(ct, 13); return out;
+}
+async function decryptBytes(data, key = state.masterKey) {
+  const a = data instanceof Uint8Array ? data : new Uint8Array(data);
+  if (a[0] !== 1) throw new Error('This file isn’t a Selah entry.');
+  return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: a.subarray(1, 13) }, key, a.subarray(13)));
+}
+const encryptJSON = obj => encryptBytes(enc.encode(JSON.stringify(obj)));
+const decryptJSON = async data => JSON.parse(dec.decode(await decryptBytes(data)));
+async function pinHash(pin, salt, iterations) {
+  const base = await crypto.subtle.importKey('raw', enc.encode(pin), 'PBKDF2', false, ['deriveBits']);
+  return new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations, hash: 'SHA-256' }, base, 256));
+}
+
+/* ===== App state ===== */
+const DEFAULT_SETTINGS = {
+  apiKey: '', model: CONFIG.DEFAULT_MODEL, translation: 'ESV',
+  aboutMe: 'I’m a husband and a dad of young kids, and I work in accounting.',
+  showMic: true, lockAfterMs: 60000, lastPrompt: null, recentPrompts: []
+};
+const state = {
+  masterKey: null, settings: null, entries: new Map(), unlocked: false,
+  folderId: null, remotePhotos: new Map(), photoURLs: new Map(),
+  editing: null, topic: 'any', hiddenAt: 0, pickerOpen: false,
+  syncing: false, lastSync: 0, pendingKeyfile: null
+};
+async function loadSettings() { const r = await idb.get('settings'); return { ...DEFAULT_SETTINGS, ...(r ? await decryptJSON(r) : {}) }; }
+async function saveSettings() { await idb.set('settings', await encryptJSON(state.settings)); }
+
+/* ===== Google Drive ===== */
+const DRIVE = 'https://www.googleapis.com/drive/v3', UPLOAD = 'https://www.googleapis.com/upload/drive/v3';
+let tokenClient = null, accessToken = null, tokenExpiry = 0;
+const hasToken = () => accessToken && Date.now() < tokenExpiry - 60000;
+function gisReady() {
+  return new Promise((res, rej) => {
+    if (window.google?.accounts?.oauth2) return res();
+    let n = 0; const t = setInterval(() => { if (window.google?.accounts?.oauth2) { clearInterval(t); res(); } else if (++n > 80) { clearInterval(t); rej(new Error('Google sign-in didn’t load. Check your internet connection.')); } }, 100);
+  });
+}
+async function getToken() {
+  if (hasToken()) return accessToken;
+  if (CONFIG.GOOGLE_CLIENT_ID.startsWith('PASTE')) throw new Error('Add your Google client ID to CONFIG at the top of index.html.');
+  await gisReady();
+  if (!tokenClient) tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CONFIG.GOOGLE_CLIENT_ID, scope: 'https://www.googleapis.com/auth/drive.file', callback: () => {} });
+  return new Promise((res, rej) => {
+    tokenClient.callback = r => { if (r.error) return rej(new Error('Google sign-in didn’t finish.')); accessToken = r.access_token; tokenExpiry = Date.now() + r.expires_in * 1000; res(accessToken); };
+    tokenClient.error_callback = e => rej(new Error(e?.type === 'popup_failed_to_open' ? 'Google sign-in was blocked. Tap Sync to try again.' : 'Google sign-in was closed.'));
+    tokenClient.requestAccessToken({ prompt: '' });
+  });
+}
+async function gfetch(url, opts = {}) {
+  const token = await getToken();
+  const r = await fetch(url, { ...opts, headers: { ...(opts.headers || {}), Authorization: 'Bearer ' + token } });
+  if (r.status === 401) { accessToken = null; throw new Error('Google sign-in expired. Tap Sync to reconnect.'); }
+  if (!r.ok) throw new Error(`Google Drive returned an error (${r.status}).`);
+  return r;
+}
+async function ensureFolder() {
+  if (state.folderId) return state.folderId;
+  const q = encodeURIComponent(`name='${CONFIG.DRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const found = await (await gfetch(`${DRIVE}/files?q=${q}&fields=files(id)&spaces=drive`)).json();
+  if (found.files?.length) return state.folderId = found.files[0].id;
+  const made = await (await gfetch(`${DRIVE}/files?fields=id`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: CONFIG.DRIVE_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' }) })).json();
+  return state.folderId = made.id;
+}
+async function listFolder() {
+  const folder = await ensureFolder(); let files = [], pageToken = '';
+  do {
+    const q = encodeURIComponent(`'${folder}' in parents and trashed=false`);
+    const r = await (await gfetch(`${DRIVE}/files?q=${q}&pageSize=1000&fields=nextPageToken,files(id,name,appProperties)${pageToken ? '&pageToken=' + pageToken : ''}`)).json();
+    files = files.concat(r.files || []); pageToken = r.nextPageToken || '';
+  } while (pageToken);
+  return files;
+}
+async function uploadFile(name, bytes, appProperties = {}, existingId = null, mime = 'application/octet-stream') {
+  const meta = existingId ? { appProperties } : { name, parents: [await ensureFolder()], mimeType: mime, appProperties };
+  const fd = new FormData();
+  fd.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+  fd.append('file', new Blob([bytes], { type: mime }));
+  const url = existingId ? `${UPLOAD}/files/${existingId}?uploadType=multipart&fields=id,name,appProperties` : `${UPLOAD}/files?uploadType=multipart&fields=id,name,appProperties`;
+  return (await gfetch(url, { method: existingId ? 'PATCH' : 'POST', body: fd })).json();
+}
+const downloadFile = async id => (await gfetch(`${DRIVE}/files/${id}?alt=media`)).arrayBuffer();
+const trashFile = id => gfetch(`${DRIVE}/files/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trashed: true }) });
+
+/* ===== Setup ===== */
+function setupStep(step) {
+  ['welcome', 'checking', 'new', 'existing'].forEach(s => $('#setup-' + s).hidden = s !== step);
+  $('#setup-msg').textContent = ''; show('screen-setup');
+  const f = $('#setup-' + step + ' input'); if (f) setTimeout(() => f.focus(), 50);
+}
+$('#btn-connect').onclick = async () => {
+  try {
+    await getToken();
+    setupStep('checking');
+    const folder = await ensureFolder();
+    const q = encodeURIComponent(`name='selah-key.json' and '${folder}' in parents and trashed=false`);
+    const r = await (await gfetch(`${DRIVE}/files?q=${q}&fields=files(id)`)).json();
+    if (r.files?.length) { state.pendingKeyfile = JSON.parse(dec.decode(await downloadFile(r.files[0].id))); setupStep('existing'); }
+    else setupStep('new');
+  } catch (e) { setupStep('welcome'); $('#setup-msg').textContent = e.message; }
+};
+$('#setup-new').onsubmit = async ev => {
+  ev.preventDefault();
+  const p1 = $('#pass-new').value, p2 = $('#pass-new2').value;
+  if (p1.length < 12) return $('#setup-msg').textContent = 'Use at least 12 characters.';
+  if (p1 !== p2) return $('#setup-msg').textContent = 'The two passphrases don’t match.';
+  const btn = ev.submitter || $('#setup-new button');
+  try {
+    await busy(btn, 'Creating…', async () => {
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const kek = await deriveWrappingKey(p1, salt, CONFIG.PASS_ITERATIONS);
+      const master = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const wrapped = await crypto.subtle.wrapKey('raw', master, kek, { name: 'AES-GCM', iv });
+      const kf = { app: 'selah', v: 1, salt: b64.from(salt), iterations: CONFIG.PASS_ITERATIONS, iv: b64.from(iv), wrapped: b64.from(wrapped), created: new Date().toISOString() };
+      await uploadFile('selah-key.json', enc.encode(JSON.stringify(kf)), {}, null, 'application/json');
+      await storeMasterKey(await unwrapMaster(kf, kek, false));
+    });
+    $('#pass-new').value = $('#pass-new2').value = '';
+    pinMode('create');
+  } catch (e) { $('#setup-msg').textContent = e.message; }
+};
+$('#setup-existing').onsubmit = async ev => {
+  ev.preventDefault();
+  const kf = state.pendingKeyfile, btn = ev.submitter || $('#setup-existing button');
+  try {
+    await busy(btn, 'Opening…', async () => {
+      const kek = await deriveWrappingKey($('#pass-existing').value, b64.to(kf.salt), kf.iterations);
+      let key; try { key = await unwrapMaster(kf, kek, false); } catch { throw new Error('That passphrase didn’t open the journal. Check it and try again.'); }
+      await storeMasterKey(key);
+    });
+    $('#pass-existing').value = '';
+    pinMode('create');
+  } catch (e) { $('#setup-msg').textContent = e.message; }
+};
+async function storeMasterKey(key) { state.masterKey = key; await idb.set('masterKey', key); }
+
+/* ===== PIN ===== */
+let pinBuf = '', pinState = 'unlock', pinFirst = '', pinReturn = 'create', pinBusy = false;
+const PIN_TITLES = { unlock: 'Enter your PIN', create: 'Choose a 4-digit PIN', change: 'Choose a new 4-digit PIN', confirm: 'Enter the same PIN again' };
+function pinMode(m) {
+  pinState = m; pinBuf = ''; drawDots();
+  $('#pin-title').textContent = PIN_TITLES[m]; $('#pin-msg').textContent = '';
+  $('#pin-cancel').hidden = !(m === 'change' || (m === 'confirm' && pinReturn === 'change'));
+  show('screen-pin');
+}
+function drawDots() { $$('#pin-dots span').forEach((s, i) => s.classList.toggle('on', i < pinBuf.length)); }
+function pinFail(msg) { $('#pin-msg').textContent = msg; const d = $('#pin-dots'); d.classList.remove('shake'); void d.offsetWidth; d.classList.add('shake'); pinBuf = ''; drawDots(); }
+async function pinPress(d) {
+  if (pinBusy) return;
+  if (d === 'back') { pinBuf = pinBuf.slice(0, -1); return drawDots(); }
+  if (pinBuf.length >= 4) return;
+  pinBuf += d; drawDots();
+  if (pinBuf.length === 4) { pinBusy = true; try { await pinComplete(pinBuf); } finally { pinBusy = false; } }
+}
+async function pinComplete(v) {
+  if (pinState === 'create' || pinState === 'change') { pinFirst = v; pinReturn = pinState; setTimeout(() => pinMode('confirm'), 150); return; }
+  if (pinState === 'confirm') {
+    if (v !== pinFirst) { pinFail('Those didn’t match. Choose your PIN again.'); setTimeout(() => pinMode(pinReturn), 1100); return; }
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    await idb.set('pin', { salt: b64.from(salt), iterations: CONFIG.PIN_ITERATIONS, hash: b64.from(await pinHash(v, salt, CONFIG.PIN_ITERATIONS)) });
+    await idb.set('pinAttempts', 0);
+    if (pinReturn === 'change') { toast('PIN changed'); openSettings(); } else await unlock();
+    return;
+  }
+  const rec = await idb.get('pin');
+  const h = await pinHash(v, b64.to(rec.salt), rec.iterations);
+  const ok = b64.from(h) === rec.hash;
+  if (ok) { await idb.set('pinAttempts', 0); return unlock(); }
+  const n = (await idb.get('pinAttempts') || 0) + 1; await idb.set('pinAttempts', n);
+  const left = CONFIG.MAX_PIN_ATTEMPTS - n;
+  if (left <= 0) {
+    await wipeDevice();
+    setupStep('welcome');
+    $('#setup-msg').textContent = 'Too many wrong PINs, so this device’s copy was removed. Connect Google Drive and enter your passphrase to bring your journal back.';
+    return;
+  }
+  pinFail(`Wrong PIN. ${left} ${left === 1 ? 'try' : 'tries'} left before this device’s copy is removed.`);
+}
+$('#keypad').onclick = e => { const b = e.target.closest('button[data-d]'); if (b) pinPress(b.dataset.d); };
+document.addEventListener('keydown', e => {
+  if ($('#screen-pin').hidden) return;
+  if (/^\d$/.test(e.key)) pinPress(e.key); else if (e.key === 'Backspace') pinPress('back');
+});
+$('#pin-cancel').onclick = () => openSettings();
+
+/* ===== Unlock / lock ===== */
+async function unlock() {
+  state.masterKey = await idb.get('masterKey');
+  state.settings = await loadSettings();
+  state.entries.clear();
+  for (const k of await idb.keys()) {
+    if (!String(k).startsWith('entry:')) continue;
+    const r = await idb.get(k);
+    if (r && !r.deleted && r.cipher) { try { const e = await decryptJSON(r.cipher); state.entries.set(e.id, e); } catch {} }
+  }
+  state.unlocked = true;
+  renderHome();
+  const draft = await idb.get('draft');
+  if (draft) { try { openEditor(await decryptJSON(draft)); } catch { await idb.del('draft'); show('screen-home'); } }
+  else show('screen-home');
+  sync({ silent: true });
+}
+function lock() {
+  stopMic();
+  state.unlocked = false; state.masterKey = null; state.entries.clear(); state.editing = null;
+  for (const u of state.photoURLs.values()) URL.revokeObjectURL(u);
+  state.photoURLs.clear();
+  $('#timeline').innerHTML = ''; $('#entry-text').value = ''; $('#prompt-body').innerHTML = ''; $('#reflections').innerHTML = ''; $('#photo-strip').innerHTML = '';
+  pinMode('unlock');
+}
+document.addEventListener('visibilitychange', async () => {
+  if (!state.unlocked) return;
+  if (document.hidden) { state.hiddenAt = Date.now(); if (state.editing) await saveDraft(); return; }
+  const away = Date.now() - state.hiddenAt;
+  if (state.pickerOpen && away < 180000) { state.pickerOpen = false; return; }
+  state.pickerOpen = false;
+  if (away >= state.settings.lockAfterMs) lock();
+});
+$('#btn-lock').onclick = lock;
+async function wipeDevice() {
+  lock(); await idb.clear(); state.folderId = null; state.remotePhotos.clear(); accessToken = null;
+}
+
+/* ===== Home ===== */
+const TOPICS = [['any', 'Surprise me'], ['wife', 'My wife'], ['kids', 'My kids'], ['work', 'Work'], ['gratitude', 'Gratitude'], ['god', 'Where I saw God'], ['hard', 'Something hard']];
+const TOPIC_TEXT = { any: 'anything; pick a fresh angle', wife: 'his marriage and his wife', kids: 'his children and being a dad', work: 'his work and career', gratitude: 'gratitude', god: 'noticing where God showed up recently', hard: 'something difficult he is carrying' };
+function renderHome() { renderChips(); renderPrompt(); renderTimeline(); renderSyncButton(); }
+function renderChips() {
+  $('#topic-chips').innerHTML = TOPICS.map(([k, l]) => `<button class="chip" data-topic="${k}" aria-pressed="${state.topic === k}">${l}</button>`).join('');
+}
+$('#topic-chips').onclick = e => { const b = e.target.closest('[data-topic]'); if (!b) return; state.topic = b.dataset.topic; renderChips(); };
+function verseHTML(v) {
+  if (!v?.text) return '';
+  const t = state.settings.translation;
+  const url = `https://www.biblegateway.com/passage/?search=${encodeURIComponent(v.reference)}&version=${encodeURIComponent(t)}`;
+  return `<blockquote class="verse"><p>${esc(v.text)}</p><cite><a href="${url}" target="_blank" rel="noopener">${esc(v.reference)} (${esc(t)})</a></cite></blockquote>`;
+}
+function promptHTML(p) {
+  return `<p class="prompt-text">${esc(p.prompt)}</p>` + (p.nudges?.length ? `<ul class="nudges">${p.nudges.map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : '') + verseHTML(p.verse);
+}
+function renderPrompt() {
+  const p = state.settings.lastPrompt;
+  if (!p) { $('#prompt-body').innerHTML = `<p class="prompt-text quiet">Pick what’s on your mind, then ask for a prompt.</p>`; $('#btn-write-prompt').hidden = true; $('#btn-new-prompt').textContent = 'Give me a prompt'; return; }
+  $('#prompt-body').innerHTML = promptHTML(p); $('#btn-write-prompt').hidden = false; $('#btn-new-prompt').textContent = 'Another prompt';
+}
+function renderTimeline() {
+  const q = $('#search').value.trim().toLowerCase();
+  let list = [...state.entries.values()].sort((a, b) => b.date.localeCompare(a.date) || b.created - a.created);
+  if (q) list = list.filter(e => `${e.text} ${e.prompt?.prompt || ''}`.toLowerCase().includes(q));
+  const tl = $('#timeline');
+  if (!list.length) { tl.innerHTML = `<p class="empty">${q ? `No entries mention “${esc(q)}”.` : 'Nothing written yet. Tap New entry and start talking, or ask for a prompt above.'}</p>`; return; }
+  let html = '', month = '';
+  for (const e of list) {
+    const d = parseDate(e.date), m = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    if (m !== month) { if (month) html += '</ol>'; html += `<h3 class="month">${m}</h3><ol class="entries">`; month = m; }
+    const excerpt = (e.text || '').trim().slice(0, 220) || 'Photos';
+    const meta = [];
+    if (e.photos.length) meta.push(`${e.photos.length} photo${e.photos.length > 1 ? 's' : ''}`);
+    if (e.reflections?.length) meta.push('reflection');
+    html += `<li><button class="entry-row" data-id="${esc(e.id)}"><span class="day"><span class="dnum">${d.getDate()}</span><span class="dname">${d.toLocaleDateString('en-US', { weekday: 'short' })}</span></span><span class="ebody"><span class="excerpt">${esc(excerpt)}</span>${meta.length ? `<span class="meta">${meta.join(', ')}</span>` : ''}</span>${e.photos.length ? `<img class="thumb" data-photo="${esc(e.photos[0])}" alt="">` : ''}</button></li>`;
+  }
+  tl.innerHTML = html + '</ol>';
+  $$('img[data-photo]', tl).forEach(img => getPhotoURL(img.dataset.photo).then(u => { if (u) img.src = u; else img.remove(); }).catch(() => img.remove()));
+}
+$('#search').oninput = renderTimeline;
+$('#timeline').onclick = e => { const b = e.target.closest('.entry-row'); if (!b) return; const en = state.entries.get(b.dataset.id); if (en) openEditor({ entry: structuredClone(en), isNew: false, newPhotos: [], origPhotos: [...en.photos], origText: en.text }); };
+$('#btn-new').onclick = () => newEntry(null);
+$('#btn-write-prompt').onclick = () => { const p = state.settings.lastPrompt; newEntry(p ? { prompt: p.prompt, nudges: p.nudges || [], verse: p.verse || null } : null); };
+$('#btn-new-prompt').onclick = e => busy(e.currentTarget, 'Thinking…', newPrompt).then(renderPrompt).catch(err => toast(err.message, 5000));
+
+/* ===== Claude ===== */
+async function callClaude(system, userText, maxTokens = 700) {
+  const s = state.settings;
+  if (!s.apiKey) throw new Error('Add your Claude API key in Settings first.');
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-api-key': s.apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+    body: JSON.stringify({ model: s.model || CONFIG.DEFAULT_MODEL, max_tokens: maxTokens, system, messages: [{ role: 'user', content: userText }] })
+  });
+  if (!r.ok) {
+    let detail = ''; try { detail = (await r.json()).error?.message || ''; } catch {}
+    throw new Error(r.status === 401 ? 'Claude didn’t accept the API key. Check it in Settings.' : `Claude returned an error (${r.status}). ${detail}`.trim());
+  }
+  const d = await r.json();
+  return d.content.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
+}
+async function newPrompt() {
+  const s = state.settings, now = new Date(), h = now.getHours();
+  const part = h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
+  const system = `You write journaling prompts for a Christian man's private journal. About him: ${s.aboutMe || 'a Christian husband and father.'}
+Write one prompt that invites honest, specific writing about real life: his marriage, his kids, his work, friendships, and his inner life. The prompts are faith-informed: usually, though not every time, they gently invite him to notice where Christ is present in the ordinary moment. Never preachy, generic, or guilt-driven. One or two sentences, concrete enough that he can start writing right away.
+Add two short follow-up questions he can use if he gets stuck.
+Pair it with one Bible verse that fits, quoted from the ${s.translation} translation. Only use a verse whose exact wording you know; prefer well-known passages.
+Respond with JSON only, no other text: {"prompt": string, "nudges": [string, string], "verse": {"reference": string, "text": string}}`;
+  const user = `It's ${now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}, ${part}. Focus: ${TOPIC_TEXT[state.topic]}. Don't repeat these recent prompts: ${JSON.stringify(s.recentPrompts.slice(-8))}`;
+  const raw = await callClaude(system, user, 600);
+  let p; try { p = JSON.parse(raw.replace(/```json|```/g, '').trim()); } catch { throw new Error('The prompt came back garbled. Tap again.'); }
+  if (!p.prompt) throw new Error('The prompt came back empty. Tap again.');
+  s.lastPrompt = { prompt: p.prompt, nudges: (p.nudges || []).slice(0, 2), verse: p.verse || null, at: Date.now() };
+  s.recentPrompts = [...s.recentPrompts, p.prompt].slice(-12);
+  await saveSettings(); renderPrompt();
+}
+
+/* ===== Editor ===== */
+function newEntry(prompt) {
+  openEditor({ entry: { id: uid(), date: todayISO(), created: Date.now(), updated: 0, text: '', prompt, photos: [], reflections: [] }, isNew: true, newPhotos: [], origPhotos: [], origText: '' });
+}
+function openEditor(ed) {
+  state.editing = ed; const e = ed.entry;
+  $('#entry-date').value = e.date;
+  $('#editor-prompt').innerHTML = e.prompt ? promptHTML(e.prompt) : '';
+  $('#entry-text').value = e.text || '';
+  $('#btn-delete').hidden = ed.isNew;
+  $('#btn-mic').hidden = !state.settings.showMic;
+  renderPhotoStrip(); renderReflections();
+  show('screen-editor'); autosize();
+  if (ed.isNew && !e.text) setTimeout(() => $('#entry-text').focus(), 80);
+}
+function readEditor() { const e = state.editing.entry; e.text = $('#entry-text').value; e.date = $('#entry-date').value || e.date; }
+function autosize() { const t = $('#entry-text'); t.style.height = 'auto'; t.style.height = Math.max(t.scrollHeight, window.innerHeight * 0.4) + 'px'; }
+$('#entry-text').oninput = autosize;
+async function saveDraft() {
+  if (!state.editing || !state.masterKey) return;
+  readEditor(); await idb.set('draft', await encryptJSON(state.editing));
+}
+async function persistEntry(e) {
+  e.updated = Date.now();
+  const prev = await idb.get('entry:' + e.id);
+  await idb.set('entry:' + e.id, { id: e.id, updated: e.updated, cipher: await encryptJSON(e), driveId: prev?.driveId || null, dirty: true });
+  state.entries.set(e.id, structuredClone(e));
+}
+async function markPhotoDeleted(id) { const r = await idb.get('photo:' + id); await idb.set('photo:' + id, { driveId: r?.driveId || null, deleted: true, dirty: true }); }
+async function commitEditor() {
+  const ed = state.editing; readEditor(); const e = ed.entry;
+  await persistEntry(e);
+  for (const id of ed.origPhotos) if (!e.photos.includes(id)) await markPhotoDeleted(id);
+  for (const id of ed.newPhotos) if (!e.photos.includes(id)) await idb.del('photo:' + id);
+  ed.origPhotos = [...e.photos]; ed.newPhotos = []; ed.origText = e.text; ed.isNew = false;
+  $('#btn-delete').hidden = false;
+}
+async function closeEditor() { stopMic(); state.editing = null; await idb.del('draft'); renderHome(); show('screen-home'); }
+$('#btn-save').onclick = async () => {
+  readEditor(); const e = state.editing.entry;
+  if (!e.text.trim() && !e.photos.length) return toast('Write something or add a photo first.');
+  stopMic(); await commitEditor(); await closeEditor(); toast('Saved'); sync({ silent: true });
+};
+$('#btn-cancel').onclick = async () => {
+  const ed = state.editing; readEditor();
+  const changed = ed.entry.text !== ed.origText || ed.newPhotos.length || ed.origPhotos.some(id => !ed.entry.photos.includes(id));
+  if (changed && !(await confirmDialog('Discard changes?', 'What you’ve written since your last save will be lost.', 'Discard'))) return;
+  for (const id of ed.newPhotos) await idb.del('photo:' + id);
+  await closeEditor();
+};
+$('#btn-delete').onclick = async () => {
+  if (!(await confirmDialog('Delete this entry?', 'It will be removed from this device and moved to the trash in Google Drive.', 'Delete'))) return;
+  const e = state.editing.entry, prev = await idb.get('entry:' + e.id);
+  await idb.set('entry:' + e.id, { id: e.id, updated: Date.now(), driveId: prev?.driveId || null, deleted: true, dirty: true });
+  for (const id of new Set([...e.photos, ...state.editing.origPhotos])) await markPhotoDeleted(id);
+  state.entries.delete(e.id);
+  await closeEditor(); toast('Entry deleted'); sync({ silent: true });
+};
+
+/* Photos */
+$('#btn-photo').onclick = () => { state.pickerOpen = true; $('#photo-input').click(); };
+$('#photo-input').onchange = async ev => {
+  const files = [...ev.target.files]; ev.target.value = '';
+  if (!state.unlocked || !state.editing) return;
+  for (const f of files) {
+    try {
+      const bytes = await compressImage(f), id = uid();
+      await idb.set('photo:' + id, { cipher: await encryptBytes(bytes), driveId: null, dirty: true });
+      state.photoURLs.set(id, URL.createObjectURL(new Blob([bytes], { type: 'image/jpeg' })));
+      state.editing.entry.photos.push(id); state.editing.newPhotos.push(id);
+    } catch (e) { toast(e.message || 'Couldn’t add that photo.'); }
+  }
+  renderPhotoStrip();
+};
+async function compressImage(file) {
+  let src;
+  try { src = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+  catch { src = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('Couldn’t read that image.')); i.src = URL.createObjectURL(file); }); }
+  const scale = Math.min(1, 1600 / Math.max(src.width, src.height));
+  const c = document.createElement('canvas'); c.width = Math.round(src.width * scale); c.height = Math.round(src.height * scale);
+  c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.82));
+  return new Uint8Array(await blob.arrayBuffer());
+}
+async function getPhotoURL(id) {
+  if (state.photoURLs.has(id)) return state.photoURLs.get(id);
+  let rec = await idb.get('photo:' + id);
+  if (!rec?.cipher) {
+    const rf = state.remotePhotos.get(id);
+    if (!rf || !hasToken()) return null;
+    rec = { cipher: new Uint8Array(await downloadFile(rf.id)), driveId: rf.id, dirty: false };
+    await idb.set('photo:' + id, rec);
+  }
+  if (!state.masterKey) return null;
+  const u = URL.createObjectURL(new Blob([await decryptBytes(rec.cipher)], { type: 'image/jpeg' }));
+  state.photoURLs.set(id, u); return u;
+}
+function renderPhotoStrip() {
+  const strip = $('#photo-strip');
+  strip.innerHTML = state.editing.entry.photos.map(id => `<figure class="ph" data-id="${esc(id)}"><img alt="Photo from this entry"><button class="ph-remove" aria-label="Remove photo">×</button></figure>`).join('');
+  $$('.ph', strip).forEach(fig => getPhotoURL(fig.dataset.id).then(u => { if (u) $('img', fig).src = u; }).catch(() => {}));
+}
+$('#photo-strip').onclick = e => {
+  const fig = e.target.closest('.ph'); if (!fig) return;
+  if (e.target.closest('.ph-remove')) { const p = state.editing.entry.photos; p.splice(p.indexOf(fig.dataset.id), 1); return renderPhotoStrip(); }
+  const src = $('img', fig).src; if (src) { $('#viewer img').src = src; $('#viewer').hidden = false; }
+};
+$('#viewer').onclick = () => $('#viewer').hidden = true;
+
+/* Reflections */
+function renderReflections() {
+  const r = state.editing.entry.reflections || [];
+  $('#reflections').innerHTML = r.map(x => `<article class="reflection"><h3>Reflection, ${new Date(x.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</h3>${x.text.split(/\n\s*\n/).map(p => `<p>${esc(p.trim())}</p>`).join('')}</article>`).join('');
+}
+$('#btn-reflect').onclick = async () => {
+  readEditor(); const e = state.editing.entry;
+  if (!e.text.trim()) return toast('Write something first, then ask for a reflection.');
+  if (!(await confirmDialog('Reflect on this entry?', 'Only this entry’s words go to Claude. Photos and your other entries stay private. The entry is saved first.', 'Send entry'))) return;
+  stopMic();
+  const btn = $('#btn-reflect'), label = $('span', btn); btn.disabled = true; label.textContent = 'Thinking…';
+  try {
+    await commitEditor();
+    const s = state.settings;
+    const system = `You are a warm, faith-informed companion responding to one entry from a Christian man's private journal. About him: ${s.aboutMe || 'a Christian husband and father.'}
+Respond in 120 to 180 words of plain prose, with no headings or lists. Notice something specific he wrote. Gently point to where God may be at work in it, without preaching, fixing, or forcing a spiritual lesson. Include one fitting verse from the ${s.translation} translation with its reference, quoted only if you know its exact wording. End with one question that invites him to keep writing.
+You are not a counselor. If the entry suggests he or someone else may be in danger or crisis, warmly encourage him to reach out to someone he trusts, his pastor, or a professional.`;
+    const text = await callClaude(system, `Journal entry from ${parseDate(e.date).toDateString()}:\n\n${e.text}`, 700);
+    e.reflections = [...(e.reflections || []), { at: Date.now(), text }];
+    await commitEditor(); renderReflections();
+    $('#reflections').lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    sync({ silent: true });
+  } catch (err) { toast(err.message, 5000); }
+  finally { btn.disabled = false; label.textContent = 'Reflect'; }
+};
+
+/* Voice */
+let rec = null, listening = false;
+$('#btn-mic').onclick = () => listening ? stopMic() : startMic();
+function startMic() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return toast('This browser can’t dictate here. Use the mic on your keyboard.', 4000);
+  const ta = $('#entry-text');
+  let base = '';
+  const begin = () => { base = ta.value; if (base && !/\s$/.test(base)) base += ' '; try { rec.start(); } catch {} };
+  rec = new SR(); rec.lang = 'en-US'; rec.continuous = false; rec.interimResults = true;
+  rec.onresult = ev => {
+    let said = ''; for (let i = 0; i < ev.results.length; i++) said += ev.results[i][0].transcript;
+    if (!base.trim() || /[.!?]\s*$/.test(base)) said = said.charAt(0).toUpperCase() + said.slice(1);
+    ta.value = base + said; autosize();
+  };
+  rec.onend = () => { if (listening) begin(); };
+  rec.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { toast('Allow microphone access for this site to dictate.', 4000); stopMic(); } };
+  listening = true; $('#btn-mic').setAttribute('aria-pressed', 'true'); begin();
+}
+function stopMic() { listening = false; $('#btn-mic').setAttribute('aria-pressed', 'false'); try { rec?.stop(); } catch {} rec = null; }
+
+/* ===== Sync with Google Drive ===== */
+async function pendingCount() { let n = 0; for (const k of await idb.keys()) { if (/^(entry|photo):/.test(k)) { const r = await idb.get(k); if (r?.dirty) n++; } } return n; }
+async function renderSyncButton() {
+  const b = $('#btn-sync');
+  if (state.syncing) { b.textContent = 'Syncing…'; return; }
+  const n = await pendingCount();
+  b.textContent = n ? `${n} to sync` : state.lastSync ? 'Synced' : 'Sync';
+}
+async function sync({ silent = false } = {}) {
+  if (state.syncing || !state.unlocked) return;
+  state.syncing = true; renderSyncButton();
+  try {
+    const files = await listFolder();
+    const remote = new Map(); state.remotePhotos.clear();
+    for (const f of files) {
+      const m = f.name.match(/^(entry|photo)-(.+)\.selah$/); if (!m) continue;
+      (m[1] === 'entry' ? remote : state.remotePhotos).set(m[2], f);
+    }
+    const keys = (await idb.keys()).map(String);
+    // Send photos, then entries
+    for (const k of keys.filter(k => k.startsWith('photo:'))) {
+      const r = await idb.get(k); if (!r?.dirty) continue;
+      const id = k.slice(6), rf = state.remotePhotos.get(id);
+      if (r.deleted) { if (rf) await trashFile(rf.id); state.remotePhotos.delete(id); await idb.del(k); continue; }
+      if (!rf) { const made = await uploadFile(`photo-${id}.selah`, r.cipher); r.driveId = made.id; state.remotePhotos.set(id, made); }
+      r.dirty = false; await idb.set(k, r);
+    }
+    for (const k of keys.filter(k => k.startsWith('entry:'))) {
+      const r = await idb.get(k); if (!r?.dirty) continue;
+      const id = k.slice(6), rf = remote.get(id);
+      if (r.deleted) { if (rf) await trashFile(rf.id); remote.delete(id); await idb.del(k); continue; }
+      const made = await uploadFile(`entry-${id}.selah`, r.cipher, { updated: String(r.updated) }, rf?.id || null);
+      r.driveId = made.id; r.dirty = false; await idb.set(k, r);
+      remote.set(id, { id: made.id, appProperties: { updated: String(r.updated) } });
+    }
+    // Bring in entries written on other devices
+    for (const [id, f] of remote) {
+      const local = await idb.get('entry:' + id), ru = Number(f.appProperties?.updated || 0);
+      if (local && (local.dirty || local.updated >= ru)) continue;
+      const cipher = new Uint8Array(await downloadFile(f.id));
+      const e = await decryptJSON(cipher);
+      await idb.set('entry:' + id, { id, updated: ru || e.updated, cipher, driveId: f.id, dirty: false });
+      state.entries.set(id, e);
+    }
+    // Entries deleted on another device
+    for (const k of keys.filter(k => k.startsWith('entry:'))) {
+      const id = k.slice(6); if (remote.has(id)) continue;
+      const r = await idb.get(k);
+      if (r && r.driveId && !r.dirty) { await idb.del(k); state.entries.delete(id); }
+    }
+    state.lastSync = Date.now();
+    if (!silent) toast('Synced with Google Drive');
+    if (!$('#screen-home').hidden) renderTimeline();
+  } catch (e) {
+    if (!silent) toast(e.message, 5000);
+  } finally {
+    state.syncing = false; renderSyncButton(); fillSyncInfo();
+  }
+}
+$('#btn-sync').onclick = () => sync();
+$('#btn-sync-now').onclick = () => sync();
+
+/* ===== Settings ===== */
+function fillSyncInfo() {
+  if (!state.settings) return;
+  $('#sync-info').textContent = `${state.entries.size} ${state.entries.size === 1 ? 'entry' : 'entries'} in “${CONFIG.DRIVE_FOLDER_NAME}”. ` + (state.lastSync ? `Last synced at ${new Date(state.lastSync).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}.` : 'Not synced yet this session.');
+}
+function openSettings() {
+  const s = state.settings;
+  $('#set-apikey').value = s.apiKey; $('#set-about').value = s.aboutMe; $('#set-translation').value = s.translation;
+  $('#set-model').value = s.model; $('#set-mic').checked = s.showMic; $('#set-lock').value = String(s.lockAfterMs);
+  fillSyncInfo(); show('screen-settings');
+}
+async function readSettings() {
+  const s = state.settings;
+  s.apiKey = $('#set-apikey').value.trim(); s.aboutMe = $('#set-about').value.trim(); s.translation = $('#set-translation').value;
+  s.model = $('#set-model').value.trim() || CONFIG.DEFAULT_MODEL; s.showMic = $('#set-mic').checked; s.lockAfterMs = Number($('#set-lock').value);
+  await saveSettings();
+}
+$$('#screen-settings input, #screen-settings select, #screen-settings textarea').forEach(el => el.addEventListener('change', readSettings));
+$('#btn-settings').onclick = openSettings;
+$('#btn-settings-back').onclick = async () => { await readSettings(); renderHome(); show('screen-home'); };
+$('#btn-change-pin').onclick = () => pinMode('change');
+$('#btn-wipe').onclick = async () => {
+  if (!(await confirmDialog('Remove journal from this device?', 'Entries not yet synced will be lost. Synced entries stay in Google Drive and come back with your passphrase.', 'Remove'))) return;
+  await wipeDevice(); setupStep('welcome');
+};
+
+/* ===== Start ===== */
+(async function boot() {
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+  navigator.storage?.persist?.();
+  const key = await idb.get('masterKey'), pin = await idb.get('pin');
+  if (key && pin) pinMode('unlock');
+  else if (key) { state.masterKey = key; pinMode('create'); }
+  else setupStep('welcome');
+})();
+</script>
+</body>
+</html>
